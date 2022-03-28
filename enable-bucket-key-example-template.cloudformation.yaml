@@ -1,7 +1,15 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Sets up all the necessary resources to enable the S3 Bucket Keys feature
+  on existing S3 objects.
 Parameters:
   Prefix:
     Default: enable-bucket-key-example
     Type: String
+    MinLength: 3
+    MaxLength: 32
+    Description: 'Custom prefix used to name the resources. Defaults to: enable-bucket-key-example'
 Resources:
   EnableBucketKeyExampleBucket:
     Type: AWS::S3::Bucket
@@ -15,7 +23,10 @@ Resources:
   EnableBucketKeyExampleRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: EnableBucketKeyExampleRole
+      RoleName: !Join
+          - ''
+          - - !Ref 'Prefix'
+            - '-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -26,7 +37,10 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: EnableBucketKeyExamplePolicy
+        - PolicyName: !Join
+          - ''
+          - - !Ref 'Prefix'
+            - '-Policy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -46,8 +60,17 @@ Resources:
                   - ''
                   - - !GetAtt 'EnableBucketKeyExampleBucket.Arn'
                     - /*
+  EnableBucketKeyExampleLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join
+          - '/aws/lambda'
+          - - !Ref 'Prefix'
+      RetentionInDays: 30
   EnableBucketKeyExampleLambdaFunction:
     Type: AWS::Lambda::Function
+    DependsOn:
+        - EnableBucketKeyExampleLogGroup
     Properties:
       FunctionName: !Join
         - ''
@@ -58,7 +81,7 @@ Resources:
       Runtime: python3.9
       Timeout: 900
       Code:
-        ZipFile: "def handler(event, context):\n\tprint('hello from lambda')"
+        ZipFile: 'def handler(event, context):\n\tprint("hello from lambda")'
   EnableBucketKeyExampleBatchOpsBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -69,7 +92,10 @@ Resources:
   EnableBucketKeyExampleBatchOpsRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: EnableBucketKeyExampleBatchOpsRole
+      RoleName: !Join
+          - ''
+          - - !Ref 'Prefix'
+            - '-batch-ops-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
